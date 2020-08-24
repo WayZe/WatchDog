@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+import psycopg2
 
 
 # Получаем курс доллара
@@ -16,5 +17,9 @@ if __name__ == '__main__':
     dollar_rate = get_dollar_rate()
     if dollar_rate is not None:
         print(dollar_rate)
+        conn = psycopg2.connect(dbname='dollar', user='postgres',
+                                password='postgres', host='postgres')
+        cursor = conn.cursor()
+        cursor.execute('INSERT INTO dollar VALUES (2.0, "1999-01-08 04:05:06");')
     else:
         print("Unknown error")
