@@ -3,7 +3,7 @@ from functions import get_str_env
 from dotenv import load_dotenv
 from parser import Rater
 
-
+# нужно для локального запуска
 load_dotenv()
 bot = telebot.TeleBot(get_str_env('TOKEN'))
 
