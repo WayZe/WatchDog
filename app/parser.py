@@ -1,27 +1,26 @@
 import time
+import json
 import requests
-from typing import Optional
-from bs4 import BeautifulSoup
-
-
-TIMEOUT = 60
+from dotenv import load_dotenv
+from functions import get_int_env, get_str_env
 
 
 # Получаем курс доллара
-def get_dollar_rate() -> Optional[float]:
-    rate: Optional[float] = None
-    html = requests.get('https://www.cbr.ru/')
-    if html.status_code == 200:
-        soup = BeautifulSoup(html.text, 'html.parser')
-        rate = soup.find('div', class_='indicator_el_value mono-num').get_text().rstrip('₽').replace(',', '.')
+def get_usd_rate() -> float:
+    url: str = get_str_env('URL')
+    response = requests.get(url, params={'base': 'USD'})
+    rate: float = json.loads(response.text)['rates']['RUB']
     return rate
 
 
 if __name__ == '__main__':
+    load_dotenv()
+
     while True:
-        dollar_rate = get_dollar_rate()
-        if dollar_rate is not None:
-            print(dollar_rate)
+        usd_rate = get_usd_rate()
+        if usd_rate is not None:
+            print(usd_rate)
         else:
-            print("Unknown error")
-        time.sleep(TIMEOUT)
+            print('Не удалось получить курс usd.')
+        timeout: int = get_int_env('TIMEOUT')
+        time.sleep(timeout)
