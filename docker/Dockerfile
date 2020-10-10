@@ -1,7 +1,10 @@
 FROM python:3.9-rc-alpine3.12
 
 RUN apk update
-RUN pip install --upgrade pip requests python-dotenv pytelegrambotapi
+
+COPY requirements.txt .
+
+RUN pip install --upgrade pip -r requirements.txt
 
 COPY app /opt/app
 
