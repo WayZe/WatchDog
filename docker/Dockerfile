@@ -7,7 +7,10 @@ COPY requirements.txt .
 RUN pip install --upgrade pip -r requirements.txt
 
 COPY app /opt/app
+COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 
 WORKDIR /opt
 
-ENTRYPOINT ["python", "app/api.py"]
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT [ "entrypoint.sh" ]
