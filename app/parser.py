@@ -19,6 +19,7 @@ class Rater:
         Returns:
             Dict[str, Dict[str, Union[str, float]]]: словарь {название_валюты: {'rate': курс, 'emoji': код_эмодзи}}
         """
+        RATE_LENGTH: int = 10000
         new_call = time.time()
         # сбрасываем кэш, если прошло больше часа
         if (new_call - self._last_call) / 3600 > 1:
@@ -29,8 +30,14 @@ class Rater:
             logging.warning(f'Получаем курсы валют c {get_str_env("URL")}')
             self._currencies_data = {}
             url: str = get_str_env('URL')
+            response = requests.get(url, params={'base': 'USD'})
+            rates: Dict[str, float] = json.loads(response.text)['rates']
             for currency, emoji in self._currencies_to_emojis.items():
-                response = requests.get(url, params={'base': currency})
-                rate: float = json.loads(response.text)['rates']['RUB']
-                self._currencies_data.update({currency: {'rate': rate, 'emoji': emoji}})
+                # делаем базовой валютой RUB и обрезаем до четырех знаков после запятой
+                rub_base_rate: float = int(rates['RUB'] / rates[currency] * RATE_LENGTH) / RATE_LENGTH
+                self._currencies_data.update({
+                    currency: {
+                        'rate': rub_base_rate,
+                        'emoji': emoji}
+                })
         return self._currencies_data
