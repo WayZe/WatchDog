@@ -12,28 +12,35 @@ bot = telebot.TeleBot(get_str_env('TOKEN'))
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
+    markup_reply = telebot.types.ReplyKeyboardMarkup()
+    currencies = telebot.types.KeyboardButton('Посмотреть курсы валют')
+    markup_reply.add(currencies)
     bot.send_message(
         message.chat.id,
-        r'Введите /currencies для получения курса валют.'
+        'Выберите действие:',
+        reply_markup=markup_reply
     )
-    logging.warning('Пользователь нажал кнопку start.')
+    logging.warning(f'Пользователь {message.chat.id} нажал кнопку start.')
 
 
-@bot.message_handler(commands=['currencies'])
-def currency_message(message):
-    rater = Rater()
-    currencies_to_rates: Dict[str, Dict[str, Union[str, float]]] = rater.get_all()
-    text: str = ''
-    for currency, rate_emoji in currencies_to_rates.items():
-        text = text + emojis.encode(f"{rate_emoji['emoji']} Курс {currency} {rate_emoji['rate']}\n")
-    bot.send_message(
-        message.chat.id,
-        text
-    )
-    logging.warning('Пользователь нажал кнопку currencies.')
-
-
-
+@bot.message_handler(content_types=['text'])
+def print_message(message):
+    logging.warning(f'Пользователь {message.chat.id} ввел "{message.text}".')
+    if message.text == 'Посмотреть курсы валют':
+        rater = Rater()
+        currencies_to_rates: Dict[str, Dict[str, Union[str, float]]] = rater.get_all()
+        text: str = ''
+        for currency, rate_emoji in currencies_to_rates.items():
+            text = text + emojis.encode(f"{rate_emoji['emoji']} Курс {currency} {rate_emoji['rate']}\n")
+        bot.send_message(
+            message.chat.id,
+            text
+        )
+    else:
+        bot.send_message(
+            message.chat.id,
+            'Такого действия не существует! Выберите действие на клавиатуре!'
+        )
 
 
 bot.polling()
