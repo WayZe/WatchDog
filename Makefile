@@ -5,8 +5,8 @@ HEROKU_PROJECT = registry.heroku.com/exchangewatchdog
 build:
 	docker build -t $(PROJECT_NAME) -f $(shell pwd)/docker/Dockerfile .
 
-start: make build
-	$(DOCKER_RUN) -v "$(shell pwd)":"/opt" $(PROJECT_NAME)
+start:
+	$(DOCKER_RUN) --link redis_watchdog:redis_watchdog -v "$(shell pwd)":"/opt" $(PROJECT_NAME)
 
 remove_heroku:
 	heroku container:rm $(PROJECT_NAME)
@@ -19,6 +19,9 @@ deploy_heroku:
 
 envs_heroku:
 	heroku config:set $$(cat .env | sed '/^$$/d; /#[[:print:]]*$$/d')
+
+redis:
+	docker run --rm --name redis_watchdog -d redis:6.0.8-alpine
 
 %:
 	@:

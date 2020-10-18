@@ -1,19 +1,23 @@
-import os
 import emojis
 import telebot
 import logging
 from parser import Rater
 from typing import Dict, Union
-from functions import get_str_env
+from functions import get_str_env, get_int_env
 
 
 bot = telebot.TeleBot(get_str_env('TOKEN'))
 rater = Rater()
 
+bot.send_message(
+    get_int_env('ADMIN_ID'),
+    'Бот запущен.',
+)
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
-    markup_reply = telebot.types.ReplyKeyboardMarkup()
+    markup_reply = telebot.types.ReplyKeyboardMarkup(True)
     currencies = telebot.types.KeyboardButton('Посмотреть курсы валют')
     markup_reply.add(currencies)
     bot.send_message(
