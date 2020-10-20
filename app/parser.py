@@ -12,10 +12,13 @@ from functions import get_int_env, get_str_env
 class Rater:
     """Класс для работы с курсами валют."""
     def __init__(self):
+        self._last_call: float = 0
+        self._KEY: str = 'currency_data'
+        self._redis_storage = RedisStorage()
+        self._TEMP_KEY: str = f'temp_{self._KEY}'
+        self._PREV_KEY: str = f'prev_{self._KEY}'
         self._currencies_to_emojis = {'USD': ':dollar:', 'EUR': ':euro:'}
         self._currencies_data: Optional[Dict[str, Dict[str, Union[str, float]]]] = None
-        self._last_call: float = 0
-        self._redis_storage = RedisStorage()
 
     @property
     def currencies_data(self) -> Dict[str, Dict[str, Union[str, float]]]:
@@ -24,15 +27,33 @@ class Rater:
         Returns:
             Dict[str, Dict[str, Union[str, float]]]: словарь {название_валюты: {'rate': курс, 'emoji': код_эмодзи}}
         """
-        KEY: str = 'currency_data'
-        currency_data_pickle: Optional[bytes] = self._redis_storage.get_dict(KEY)
+        currency_data_pickle: Optional[bytes] = self._redis_storage.get_dict(self._KEY)
         if currency_data_pickle is None:
+            self._redis_storage.move_value(self._TEMP_KEY, self._PREV_KEY)
             response: Response = self._get_response()
             currencies_data: Dict[str, Dict[str, Union[str, float]]] = self._get_currencies_data(response)
-            self._redis_storage.save_dict(KEY, pickle.dumps(currencies_data), 3600)
+            pickled_currency_data: bytes = pickle.dumps(currencies_data)
+            self._redis_storage.save_dict(self._KEY, pickled_currency_data, 600)
+            self._redis_storage.save_dict(self._TEMP_KEY, pickled_currency_data)
         else:
             currencies_data = pickle.loads(currency_data_pickle)
-            logging.warning(f'Получили словарь {KEY} из Redis')
+            logging.warning(f'Получили словарь {self._KEY} из Redis')
+
+        if self._redis_storage.get_dict(self._PREV_KEY):
+            currencies_data = self._calculate_difference(currencies_data)
+
+        return currencies_data
+
+    def _calculate_difference(
+        self,
+        currencies_data: Dict[str, Dict[str, Union[str, float]]]
+    ) -> Dict[str, Dict[str, Union[str, float]]]:
+        """Рассчитываем разницу между предыдущим курсами и текущими."""
+        prev_currencies_data: Dict[str, Dict[str, Union[str, float]]] = pickle.loads(
+            self._redis_storage.get_dict(self._PREV_KEY)
+        )
+        for currency, value in currencies_data.items():
+            currencies_data[currency]['diff'] = value['rate'] - prev_currencies_data[currency]['rate']
         return currencies_data
 
     def _get_response(self) -> Response:
@@ -62,14 +83,23 @@ class Rater:
         """
         RATE_LENGTH: int = 10000
         currencies_data = {}
-        rates: Dict[str, float] = json.loads(response.text)['rates']
+        fake_api: int = get_int_env('FAKE_API')
+        if fake_api == 1:
+            f = open('fake_api.json', 'r')
+            rates: Dict[str, float] = json.loads(f.read())['rates']
+            f.close()
+        else:
+            rates = json.loads(response.text)['rates']
+
+        logging.warning(rates)
         for currency, emoji in self._currencies_to_emojis.items():
             # делаем базовой валютой RUB и обрезаем до четырех знаков после запятой
             rub_base_rate: float = int(rates['RUB'] / rates[currency] * RATE_LENGTH) / RATE_LENGTH
             currencies_data.update({
                 currency: {
                     'rate': rub_base_rate,
-                    'emoji': emoji
+                    'emoji': emoji,
+                    'diff': .0
                 }
             })
         return currencies_data

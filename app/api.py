@@ -14,6 +14,11 @@ bot.send_message(
     'Бот запущен.',
 )
 
+diffs_to_emojis = {
+    'up': ':arrow_up:',
+    'down': ':arrow_down:'
+}
+
 
 @bot.message_handler(commands=['start'])
 def start_message(message):
@@ -34,8 +39,9 @@ def print_message(message):
     if message.text == 'Посмотреть курсы валют':
         currencies_to_rates: Dict[str, Dict[str, Union[str, float]]] = rater.currencies_data
         text: str = ''
-        for currency, rate_emoji in currencies_to_rates.items():
-            text = text + emojis.encode(f"{rate_emoji['emoji']} Курс {currency} {rate_emoji['rate']}\n")
+        for currency, value in currencies_to_rates.items():
+            diff: str = diffs_to_emojis['up'] if value['diff'] > 0 else diffs_to_emojis['down']
+            text = text + emojis.encode(f"{value['emoji']} Курс {currency} {value['rate']} {diff}\n")
         bot.send_message(
             message.chat.id,
             text
