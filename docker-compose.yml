@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+
+  redis:
+    image: redis:6.0.8-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    hostname: redis
+    volumes:
+      - redis-data:/data
+    networks:
+      - watchdog
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: entrypoint.sh
+    env_file:
+      - .env
+    volumes:
+      - .:/opt
+    links:
+      - redis
+    depends_on:
+      - redis
+    networks:
+      - watchdog
+
+volumes:
+  redis-data:
+
+networks:
+    watchdog:
