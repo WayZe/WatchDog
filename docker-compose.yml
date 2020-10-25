@@ -2,33 +2,38 @@ version: "3.8"
 
 services:
 
+  postgres:
+    image: postgres:13-alpine
+    container_name: postgres
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - postgres_data:/var/lib/postgres
+
   redis:
     image: redis:6.0.8-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    hostname: redis
+    container_name: redis
     volumes:
-      - redis-data:/data
-    networks:
-      - watchdog
+      - redis_data:/data
 
   api:
     build:
       context: .
       dockerfile: docker/Dockerfile
     command: entrypoint.sh
+    container_name: api
     env_file:
       - .env
     volumes:
       - .:/opt
     links:
       - redis
+      - postgres
     depends_on:
       - redis
-    networks:
-      - watchdog
+      - postgres
 
 volumes:
-  redis-data:
-
-networks:
-    watchdog:
+  redis_data:
+  postgres_data:

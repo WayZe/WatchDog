@@ -8,13 +8,7 @@ class RedisStorage:
     """Класс для работы с Redis."""
     def __init__(self):
         redis_url: str = get_str_env('REDIS_URL')
-        is_production: int = get_int_env('IS_PRODUCTION')
-        if is_production == 1:
-            self._connection = redis.from_url(redis_url)
-        elif is_production == 0:
-            self._connection = redis.Redis(host=redis_url)
-        else:
-            raise(f'Задана неизвестная версия конфигурации сервиса {is_production}')
+        self._connection = redis.from_url(redis_url)
         logging.warning(f"Redis {redis_url} инициализирован.")
 
     def save_dict(self, redis_key: str, redis_dict: str, ttl: Optional[int] = None):

@@ -1,6 +1,6 @@
 FROM python:3.9-rc-alpine3.12
 
-RUN apk update
+RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
 
 COPY requirements.txt .
 
