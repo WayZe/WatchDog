@@ -5,3 +5,4 @@
 .env*
 __pycache__*
 fake_api.json
+*celerybeat-schedule*

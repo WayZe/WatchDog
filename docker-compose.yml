@@ -20,9 +20,24 @@ services:
   api:
     build:
       context: .
-      dockerfile: docker/Dockerfile
-    command: entrypoint.sh
+      dockerfile: docker/Dockerfile.api
     container_name: api
+    env_file:
+      - .env
+    volumes:
+      - .:/opt
+    links:
+      - redis
+      - postgres
+    depends_on:
+      - redis
+      - postgres
+
+  periodic:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.periodic
+    container_name: periodic
     env_file:
       - .env
     volumes:
