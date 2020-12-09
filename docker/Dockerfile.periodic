@@ -10,4 +10,4 @@ COPY app /opt/app
 
 WORKDIR /opt/app
 
-ENTRYPOINT "celery -A notification worker -B"
+ENTRYPOINT "celery -A periodic worker -B"

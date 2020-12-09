@@ -27,11 +27,5 @@ deploy_periodic:
 	heroku container:release $(PERIODIC_NAME)
 	heroku ps:scale $(PERIODIC_NAME)=1
 
-envs_heroku:
-	heroku config:set $$(cat .env | sed '/^$$/d; /#[[:print:]]*$$/d')
-
-redis:
-	docker run --rm --name redis_watchdog -d redis:6.0.8-alpine
-
 %:
 	@:

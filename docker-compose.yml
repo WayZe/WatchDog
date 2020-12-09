@@ -6,9 +6,11 @@ services:
     image: postgres:13-alpine
     container_name: postgres
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      POSTGRES_HOST_AUTH_METHOD: "trust"
+      DATABASE_URL: ${DATABASE_URL}
     volumes:
       - postgres_data:/var/lib/postgres
+    restart: always
 
   redis:
     image: redis:6.0.8-alpine
@@ -32,6 +34,7 @@ services:
     depends_on:
       - redis
       - postgres
+    restart: always
 
   periodic:
     build:
@@ -48,6 +51,7 @@ services:
     depends_on:
       - redis
       - postgres
+    restart: always
 
 volumes:
   redis_data:

@@ -1,4 +1,3 @@
-import emojis
 import telebot
 import logging
 from parser import Rater
@@ -15,11 +14,6 @@ bot.send_message(
     get_int_env('ADMIN_ID'),
     'Бот запущен.',
 )
-
-diffs_to_emojis = {
-    'up': ':arrow_up:',
-    'down': ':arrow_down:'
-}
 
 
 @bot.message_handler(commands=['start'])
@@ -40,7 +34,12 @@ def start_message(message):
 
     markup_reply = telebot.types.ReplyKeyboardMarkup(True)
     currencies = telebot.types.KeyboardButton('Курсы валют')
-    markup_reply.add(currencies)
+
+    markup_reply = telebot.types.ReplyKeyboardMarkup(True)
+    settings = telebot.types.KeyboardButton('Настройки')
+
+    markup_reply.add(currencies, settings)
+
     greeting: str = get_greeting(message.chat)
     bot.send_message(
         message.chat.id,
@@ -56,15 +55,64 @@ def start_message(message):
 def print_message(message):
     logging.warning(f'Пользователь {message.chat.id} ввел "{message.text}".')
     if message.text == 'Курсы валют':
-        currencies_to_rates: Dict[str, Dict[str, Union[str, float]]] = rater.currencies_data
-        text: str = ''
-        for currency, value in currencies_to_rates.items():
-            diff: str = diffs_to_emojis['up'] if value['diff'] > 0 else diffs_to_emojis['down']
-            text = text + emojis.encode(f"{value['emoji']} Курс {currency} {value['rate']} {diff}\n")
+
         bot.send_message(
             message.chat.id,
-            text
+            rater.formatted_currencies()
         )
+
+    elif (message.text == 'Настройки' or
+          message.text == 'Уведомления включены' or
+          message.text == 'Уведомления отключены'):
+
+        user_id: int = message.chat.id
+        if message.text == 'Настройки':
+            notification_state = postgres_storage.get_notification_state_for_user(user_id)
+            notification_button = 'включены' if notification_state else 'отключены'
+        elif message.text == 'Уведомления включены':
+            notification_button = 'отключены'
+            postgres_storage.set_notification_for_user(user_id, False)
+            bot.send_message(
+                message.chat.id,
+                'Вы отключили уведомления'
+            )
+        elif message.text == 'Уведомления отключены':
+            notification_button = 'включены'
+            postgres_storage.set_notification_for_user(user_id, True)
+            bot.send_message(
+                message.chat.id,
+                'Вы включили уведомления'
+            )
+
+        markup_reply = telebot.types.ReplyKeyboardMarkup(True)
+        frequency = telebot.types.KeyboardButton(f'Уведомления {notification_button}')
+
+        markup_reply = telebot.types.ReplyKeyboardMarkup(True)
+        back = telebot.types.KeyboardButton('В начало')
+
+        markup_reply.add(frequency, back)
+
+        bot.send_message(
+            message.chat.id,
+            f'Выберите пункт настроек:',
+            reply_markup=markup_reply
+        )
+
+    elif message.text == 'В начало':
+
+        markup_reply = telebot.types.ReplyKeyboardMarkup(True)
+        currencies = telebot.types.KeyboardButton('Курсы валют')
+
+        markup_reply = telebot.types.ReplyKeyboardMarkup(True)
+        settings = telebot.types.KeyboardButton('Настройки')
+        markup_reply.add(currencies, settings)
+
+        bot.send_message(
+            message.chat.id,
+            'Выберите, что вы хотите посмотреть.',
+            reply_markup=markup_reply
+        )
+
     else:
         bot.send_message(
             message.chat.id,

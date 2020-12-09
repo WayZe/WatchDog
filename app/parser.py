@@ -1,5 +1,6 @@
 import json
 import time
+import emojis
 import pickle
 import logging
 import requests
@@ -19,6 +20,19 @@ class Rater:
         self._PREV_KEY: str = f'prev_{self._KEY}'
         self._currencies_to_emojis = {'USD': ':dollar:', 'EUR': ':euro:'}
         self._currencies_data: Optional[Dict[str, Dict[str, Union[str, float]]]] = None
+        self._diffs_to_emojis = {
+            'up': ':arrow_up:',
+            'down': ':arrow_down:'
+        }
+
+    def formatted_currencies(self):
+        formatted_currencies: str = ''
+        for currency, value in self.currencies_data.items():
+            diff: str = self._diffs_to_emojis['up'] if value['diff'] > 0 else self._diffs_to_emojis['down']
+            formatted_currencies = formatted_currencies + emojis.encode(
+                f"{value['emoji']} Курс {currency} {value['rate']} {diff}\n"
+            )
+        return formatted_currencies
 
     @property
     def currencies_data(self) -> Dict[str, Dict[str, Union[str, float]]]:
