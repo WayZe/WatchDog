@@ -21,11 +21,16 @@ class Rater:
         self._currencies_to_emojis = {'USD': ':dollar:', 'EUR': ':euro:'}
         self._currencies_data: Optional[Dict[str, Dict[str, Union[str, float]]]] = None
         self._diffs_to_emojis = {
-            'up': ':arrow_up:',
-            'down': ':arrow_down:'
+            'up': '\U0001F7E2',
+            'down': '\U0001F534'
         }
 
-    def formatted_currencies(self):
+    def formatted_currencies(self) -> str:
+        """Возвращает отформатированные курсы валют.
+
+        Returns:
+            str: строка отформатированных курсов валют
+        """
         formatted_currencies: str = ''
         for currency, value in self.currencies_data.items():
             diff: str = self._diffs_to_emojis['up'] if value['diff'] > 0 else self._diffs_to_emojis['down']
@@ -67,7 +72,7 @@ class Rater:
             self._redis_storage.get_dict(self._PREV_KEY)
         )
         for currency, value in currencies_data.items():
-            currencies_data[currency]['diff'] = value['rate'] - prev_currencies_data[currency]['rate']
+            currencies_data[currency]['diff'] = float(value['rate']) - float(prev_currencies_data[currency]['rate'])
         return currencies_data
 
     def _get_response(self) -> Response:

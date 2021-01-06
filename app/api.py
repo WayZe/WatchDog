@@ -1,7 +1,7 @@
 import telebot
 import logging
 from parser import Rater
-from typing import Dict, Union, List
+from typing import Dict, Union, List, Optional
 from postgres_storage import PostgresStorage
 from functions import get_str_env, get_int_env
 
@@ -94,7 +94,7 @@ def print_message(message):
 
         bot.send_message(
             message.chat.id,
-            f'Выберите пункт настроек:',
+            'Выберите пункт настроек:',
             reply_markup=markup_reply
         )
 
