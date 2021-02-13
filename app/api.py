@@ -1,6 +1,6 @@
 import telebot
 import logging
-from parser import Rater
+from rater import Rater
 from typing import Dict, Union, List, Optional
 from postgres_storage import PostgresStorage
 from functions import get_str_env, get_int_env

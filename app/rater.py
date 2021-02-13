@@ -13,9 +13,9 @@ from functions import get_int_env, get_str_env
 class Rater:
     """Класс для работы с курсами валют."""
     def __init__(self):
+        self._redis_storage = RedisStorage()
         self._last_call: float = 0
         self._KEY: str = 'currency_data'
-        self._redis_storage = RedisStorage()
         self._TEMP_KEY: str = f'temp_{self._KEY}'
         self._PREV_KEY: str = f'prev_{self._KEY}'
         self._currencies_to_emojis = {'USD': ':dollar:', 'EUR': ':euro:'}
@@ -39,6 +39,15 @@ class Rater:
             )
         return formatted_currencies
 
+    def write_currencies(self):
+        # обновляем прудыдущее значение курсов
+        self._redis_storage.move_value(self._KEY, self._PREV_KEY)
+        # записываем новые значения курсов
+        response: Response = self._get_response()
+        currencies_data: Dict[str, Dict[str, Union[str, float]]] = self._get_currencies_data(response)
+        pickled_currency_data: bytes = pickle.dumps(currencies_data)
+        self._redis_storage.save_dict(self._KEY, pickled_currency_data)
+
     @property
     def currencies_data(self) -> Dict[str, Dict[str, Union[str, float]]]:
         """Получаем курсы всех валют[USD, EUR].
@@ -48,12 +57,8 @@ class Rater:
         """
         currency_data_pickle: Optional[bytes] = self._redis_storage.get_dict(self._KEY)
         if currency_data_pickle is None:
-            self._redis_storage.move_value(self._TEMP_KEY, self._PREV_KEY)
             response: Response = self._get_response()
             currencies_data: Dict[str, Dict[str, Union[str, float]]] = self._get_currencies_data(response)
-            pickled_currency_data: bytes = pickle.dumps(currencies_data)
-            self._redis_storage.save_dict(self._KEY, pickled_currency_data, 600)
-            self._redis_storage.save_dict(self._TEMP_KEY, pickled_currency_data)
         else:
             currencies_data = pickle.loads(currency_data_pickle)
             logging.warning(f'Получили словарь {self._KEY} из Redis')

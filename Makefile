@@ -6,7 +6,7 @@ HEROKU_PROJECT = registry.heroku.com/exchangewatchdog
 build:
 	docker build -t $(PROJECT_NAME) -f $(shell pwd)/docker/Dockerfile .
 
-start:
+start: build
 	$(DOCKER_RUN) --link redis_watchdog:redis_watchdog -v "$(shell pwd)":"/opt" $(PROJECT_NAME)
 
 remove_api:
